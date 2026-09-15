@@ -25,3 +25,6 @@ env/
 Thumbs.db
 .idea/
 .vscode/
+
+# Project Learning Guide (Per workspace guidelines)
+LEARNING_AND_INTERVIEW_GUIDE.md
