@@ -3,7 +3,7 @@ import os
 import time
 from pynput import keyboard
 
-LOG_FILE = "keystroke_log.csv"  # constant value
+LOG_FILE = "keystroke_log1.csv"  # constant value
 
 file_exists = os.path.isfile(LOG_FILE) # to check if file exists or not
 
