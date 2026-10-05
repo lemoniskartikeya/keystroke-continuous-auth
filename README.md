@@ -42,6 +42,8 @@ This project is under active development. Current progress:
 │   └── 03_model_training.ipynb      # Phase 3: Isolation Forest training & EER evaluation
 ├── data/
 │   └── keystroke_log_genuine.csv    # Baseline keystroke data (authorized user)
+├── results/
+│   └── far_frr_curve.png            # FAR/FRR curve with EER = 10.9% marked
 ├── .gitignore
 └── README.md
 ```
@@ -76,6 +78,12 @@ Open and run `notebooks/02_feature_extraction.ipynb`. It converts the raw keystr
 Open and run `notebooks/03_model_training.ipynb`. It trains an Isolation Forest on the genuine baseline data, plots FAR/FRR curves, and reports the Equal Error Rate (EER). Current best result: **10.9% EER**.
 
 Subsequent phases (real-time integration, multi-session drift analysis) will be documented here as they are implemented.
+
+## Results
+
+![FAR/FRR Curve](results/far_frr_curve.png)
+
+The FAR/FRR curve above shows the trade-off between False Acceptance Rate and False Rejection Rate across anomaly score thresholds. The model achieves an **Equal Error Rate (EER) of 10.9%**, meaning at the optimal threshold, roughly 1 in 9 unauthorized sessions would be accepted and 1 in 9 genuine sessions would be rejected.
 
 ## Evaluation Methodology
 
