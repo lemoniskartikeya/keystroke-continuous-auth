@@ -26,7 +26,7 @@ This project is under active development. Current progress:
 
 - **Phase 1, Data Collection**: Complete. A background keystroke listener (`01_keystroke_collector.py`) logs press/release timestamps to CSV, with no raw content persisted beyond individual key identity needed for timing calculations.
 - **Phase 2, Feature Engineering**: Complete. A feature extraction pipeline (`02_feature_extraction.ipynb`) converts raw keystroke logs into windowed feature vectors (dwell time, flight time, typing speed, backspace rate) using a sliding-window approach.
-- **Phase 3, Model Training & Evaluation**: In progress. Isolation Forest training on baseline data, with False Acceptance Rate (FAR) / False Rejection Rate (FRR) evaluation and Equal Error Rate (EER) analysis.
+- **Phase 3, Model Training & Evaluation**: Complete. Isolation Forest trained on genuine baseline data (`03_model_training.ipynb`), evaluated using FAR/FRR curves and EER analysis. Current best result: **EER = 10.9%**.
 - **Phase 4, Decision Logic**: Planned. Sliding-window anomaly scoring with majority-vote smoothing to reduce false alarms.
 - **Phase 5, Real-Time Integration**: Planned. Background service with system notifications and lock-screen triggering on sustained anomaly detection.
 - **Phase 6, Evaluation & Write-Up**: Planned. Drift analysis across multiple sessions/days and a research write-up intended for an arXiv preprint or undergraduate research symposium submission.
@@ -38,7 +38,10 @@ This project is under active development. Current progress:
 ├── src/
 │   └── 01_keystroke_collector.py    # Phase 1: keystroke timing data collector
 ├── notebooks/
-│   └── 02_feature_extraction.ipynb  # Phase 2: raw log to windowed feature vectors
+│   ├── 02_feature_extraction.ipynb  # Phase 2: raw log to windowed feature vectors
+│   └── 03_model_training.ipynb      # Phase 3: Isolation Forest training & EER evaluation
+├── data/
+│   └── keystroke_log_genuine.csv    # Baseline keystroke data (authorized user)
 ├── .gitignore
 └── README.md
 ```
@@ -69,7 +72,10 @@ Type naturally during the session. Press ESC to stop and save the log to CSV.
 ### 2. Extract features
 Open and run `notebooks/02_feature_extraction.ipynb`. It converts the raw keystroke log into a windowed feature table, saved as a CSV ready for model training.
 
-Subsequent phases (model training, real-time integration) will be documented here as they are implemented.
+### 3. Train the model & evaluate
+Open and run `notebooks/03_model_training.ipynb`. It trains an Isolation Forest on the genuine baseline data, plots FAR/FRR curves, and reports the Equal Error Rate (EER). Current best result: **10.9% EER**.
+
+Subsequent phases (real-time integration, multi-session drift analysis) will be documented here as they are implemented.
 
 ## Evaluation Methodology
 
