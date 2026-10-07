@@ -95,13 +95,31 @@ Run `notebooks/04_decision_logic.ipynb` to simulate the majority-vote buffer on 
 
 The majority-vote buffer fires an alert when **≥ 3 of the last 5 windows** are anomalous. Because adjacent windows share ~80% of their keystrokes (50-keystroke window, 10-keystroke slide step), they are highly correlated — so the buffer's primary role is **debouncing momentary spikes** rather than reducing error rates statistically.
 
+#### Simulation Run Output (`notebooks/04_decision_logic.ipynb`)
+
+```text
+--- Genuine session (should have few/no alerts) ---
+Total windows: 1024
+Total alerts: 93
+First alert at window index: 26
+
+--- Friend session (should alert, ideally early) ---
+Total windows: 1011
+Total alerts: 933
+First alert at window index: 2
+```
+
+#### Temporal Episode Analysis
+
 | Metric | Genuine User | Impostor |
 |---|---|---|
+| Total windows | 1,024 | 1,011 |
+| Total alert windows | 93 (9.1%) | 933 (92.3%) |
 | Alert episodes per session | 19 | 19 |
-| Avg episode length | ~49 keystrokes | ~491 keystrokes |
-| Avg gap between episodes | ~450 keystrokes | ~41 keystrokes |
+| Avg episode length | ~49 keystrokes (~4.9 windows) | ~491 keystrokes (~49.1 windows) |
+| Avg gap between episodes | ~450 keystrokes (~46.5 windows) | ~41 keystrokes (~4.1 windows) |
 | Time in alert state | ~9% | ~92% |
-| First alert fired at | ~260 keystrokes | ~20 keystrokes |
+| First alert fired at | ~260 keystrokes (window #26) | ~20 keystrokes (window #2) |
 
 The key discriminator is the **shape** of the alert pattern, not whether alerts fire at all:
 - **Genuine user**: brief spikes (~49 keystrokes) with long quiet spells (~450 keystrokes) that self-resolve quickly.
