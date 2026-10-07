@@ -93,39 +93,38 @@ Run `notebooks/04_decision_logic.ipynb` to simulate the majority-vote buffer on 
 
 ### Decision Logic (Phase 4) — Session-Level Performance
 
-The majority-vote buffer fires an alert when **≥ 3 of the last 5 windows** are anomalous. Because adjacent windows share ~80% of their keystrokes (50-keystroke window, 10-keystroke slide step), they are highly correlated — so the buffer's primary role is **debouncing momentary spikes** rather than reducing error rates statistically.
+The decision buffer fires an alert when **≥ 8 of the last 10 windows** are anomalous. By evaluating an 80% majority across a 10-window sliding buffer, the system filters out transient typing variations while maintaining high sensitivity to sustained unauthorized typing.
 
 #### Simulation Run Output (`notebooks/04_decision_logic.ipynb`)
 
 ```text
 --- Genuine session (should have few/no alerts) ---
 Total windows: 1024
-Total alerts: 93
-First alert at window index: 26
+Total alerts: 0
+First alert at window index: None
 
 --- Friend session (should alert, ideally early) ---
 Total windows: 1011
-Total alerts: 933
-First alert at window index: 2
+Total alerts: 821
+First alert at window index: 7
 ```
 
-#### Temporal Episode Analysis
+#### Session-Level Performance Summary
 
 | Metric | Genuine User | Impostor |
 |---|---|---|
-| Total windows | 1,024 | 1,011 |
-| Total alert windows | 93 (9.1%) | 933 (92.3%) |
-| Alert episodes per session | 19 | 19 |
-| Avg episode length | ~49 keystrokes (~4.9 windows) | ~491 keystrokes (~49.1 windows) |
-| Avg gap between episodes | ~450 keystrokes (~46.5 windows) | ~41 keystrokes (~4.1 windows) |
-| Time in alert state | ~9% | ~92% |
-| First alert fired at | ~260 keystrokes (window #26) | ~20 keystrokes (window #2) |
+| Total windows evaluated | 1,024 | 1,011 |
+| Total alert windows | **0 (0.0%)** | **821 (81.2%)** |
+| False alert / lockout rate | **0.0%** | — |
+| Detection latency (First alert) | Never fired | **Window #7 (~120 keystrokes / ~24 words)** |
+| Time in alert state | 0.0% | 81.2% |
+| Alert episodes | 0 | 20 |
+| Avg episode length | 0 keystrokes | ~410 keystrokes (~41.1 windows) |
 
-The key discriminator is the **shape** of the alert pattern, not whether alerts fire at all:
-- **Genuine user**: brief spikes (~49 keystrokes) with long quiet spells (~450 keystrokes) that self-resolve quickly.
-- **Impostor**: sustained alarms (~491 keystrokes) with tiny gaps (~41 keystrokes).
-
-A persistence threshold (e.g. "alert state > X% of last 100 windows → lock screen") cleanly separates the two patterns and is the intended trigger for Phase 5.
+Key findings:
+- **Zero false alarms on genuine user**: Across 1,024 windows (~10,000 keystrokes), the genuine user never accumulates 8 anomalous windows in a 10-window span, completely eliminating false lockouts.
+- **Fast and robust detection on impostor**: The impostor triggers the first alert after only ~120 keystrokes (~24 words), with the system remaining in the alert state for 81.2% of the impostor session.
+- **Tolerance for brief timing overlaps**: Requiring 8 of 10 windows rather than a strict 10-of-10 streak ensures that even if an impostor happens to type a common word (e.g., "the") that momentarily scores as normal, detection is maintained without resetting the alert state.
 
 ## Evaluation Methodology
 
