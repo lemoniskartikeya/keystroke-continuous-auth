@@ -26,7 +26,7 @@ The system captures only keystroke timing metadata: key-press and key-release ti
 - **Phase 2 — Feature Engineering**: ✅ Complete. Sliding-window pipeline (`02_feature_extraction.ipynb`) extracts 9 features per window: avg/std dwell, avg/std flight, typing speed, backspace rate, avg space dwell, overlap rate, long pause rate.
 - **Phase 3 — Model Training & Evaluation**: ✅ Complete. Isolation Forest trained on genuine baseline data (`03_model_training.ipynb`). FAR/FRR curves and EER analysis complete. **EER = 10.9%** at threshold `−0.0518`.
 - **Phase 4 — Decision Logic**: ✅ Complete. Majority-vote buffer (`04_decision_logic.ipynb`) smooths per-window scores into session-level alerts. See results below.
-- **Phase 5 — Real-Time Integration**: 🔲 Planned. Background service with system notifications / lock-screen trigger on sustained anomaly.
+- **Phase 5 — Real-Time Integration & Dynamic Ramp-Up**: 🔄 In Progress. Dynamic Ramp-Up consensus buffer (`05_real_time_simulation.ipynb`) cuts detection latency to ~70 keystrokes (~14 words) with 0.0% false alarms; streaming simulation verified.
 - **Phase 6 — Evaluation & Write-Up**: 🔲 Planned. Drift analysis across sessions/days; arXiv preprint or undergraduate symposium submission.
 
 ## Repository Structure
@@ -34,15 +34,17 @@ The system captures only keystroke timing metadata: key-press and key-release ti
 ```
 .
 ├── src/
-│   └── 01_keystroke_collector.py     # Phase 1: keystroke timing collector
+│   └── 01_keystroke_collector.py        # Phase 1: keystroke timing collector
 ├── notebooks/
-│   ├── 02_feature_extraction.ipynb   # Phase 2: raw log → windowed feature vectors
-│   ├── 03_model_training.ipynb       # Phase 3: Isolation Forest training & EER evaluation
-│   └── 04_decision_logic.ipynb       # Phase 4: majority-vote buffer & session-level analysis
+│   ├── 02_feature_extraction.ipynb      # Phase 2: raw log → windowed feature vectors
+│   ├── 03_model_training.ipynb          # Phase 3: Isolation Forest training & EER evaluation
+│   ├── 04_decision_logic.ipynb          # Phase 4: majority-vote buffer & session-level analysis
+│   └── 05_real_time_simulation.ipynb    # Phase 5: dynamic ramp-up & real-time streaming simulation
 ├── data/
-│   └── keystroke_log_genuine.csv     # Baseline keystroke data (authorized user)
+│   └── keystroke_log_genuine.csv        # Baseline keystroke data (authorized user)
 ├── results/
-│   └── far_frr_curve.png             # FAR/FRR curve with EER marked
+│   ├── far_frr_curve.png                # FAR/FRR curve with EER marked
+│   └── ramp_up_latency_comparison.png   # Latency comparison: Fixed 8-of-10 vs Dynamic Ramp-Up
 ├── .gitignore
 └── README.md
 ```
@@ -77,6 +79,9 @@ Run `notebooks/03_model_training.ipynb` to train the Isolation Forest, plot FAR/
 
 ### 4. Run decision logic
 Run `notebooks/04_decision_logic.ipynb` to simulate the majority-vote buffer on genuine and impostor sessions and review session-level alert statistics.
+
+### 5. Simulate real-time dynamic ramp-up & streaming
+Run `notebooks/05_real_time_simulation.ipynb` to evaluate the dynamic ramp-up consensus schedule ($3/3 \to 4/5 \to 8/10$) against the fixed 8-of-10 buffer, view the alert timeline plot, and simulate live keystroke streaming from raw logs.
 
 ## Results
 
@@ -125,6 +130,26 @@ Key findings:
 - **Zero false alarms on genuine user**: Across 1,024 windows (~10,000 keystrokes), the genuine user never accumulates 8 anomalous windows in a 10-window span, completely eliminating false lockouts.
 - **Fast and robust detection on impostor**: The impostor triggers the first alert after only ~120 keystrokes (~24 words), with the system remaining in the alert state for 81.2% of the impostor session.
 - **Tolerance for brief timing overlaps**: Requiring 8 of 10 windows rather than a strict 10-of-10 streak ensures that even if an impostor happens to type a common word (e.g., "the") that momentarily scores as normal, detection is maintained without resetting the alert state.
+
+### Dynamic Ramp-Up (Phase 5) — Latency Optimization
+
+![Ramp-Up Latency Comparison](results/ramp_up_latency_comparison.png)
+
+While the Phase 4 fixed 8-of-10 buffer eliminated false alarms, requiring 8 consecutive anomalous windows introduced cold-start latency (120 keystrokes / ~24 words). The **Dynamic Ramp-Up Buffer** scales the consensus threshold proportionally as the buffer fills:
+- Window 3 (~70 keys / ~14 words): Requires **3 of 3 (100% consensus)**
+- Windows 4–5 (~80–90 keys): Requires **≥ 4 anomalous windows**
+- Windows 6–7 (~100–110 keys): Requires **≥ 6 anomalous windows**
+- Windows 8–9 (~120–130 keys): Requires **≥ 7 anomalous windows**
+- Window 10+ (saturated): Requires **≥ 8 of 10 anomalous windows**
+
+#### Empirical Comparison on Project Data (`notebooks/05_real_time_simulation.ipynb`)
+
+| Strategy | Genuine False Alert Rate | Impostor Detection Latency | Impostor Alert Windows |
+|---|---|---|---|
+| **Fixed 8-of-10 Buffer** | **0.00%** (0 / 1,024) | Window #7 (~120 keys / ~24 words) | 821 / 1,011 (81.21%) |
+| **Dynamic Ramp-Up Buffer** | **0.00%** (0 / 1,024) | **Window #2 (~70 keys / ~14 words)** | **826 / 1,011 (81.70%)** |
+
+**Impact**: Detection latency is reduced by **42% (50 fewer keystrokes)**, catching unauthorized actors significantly faster while maintaining zero false lockouts for genuine typing.
 
 ## Evaluation Methodology
 
