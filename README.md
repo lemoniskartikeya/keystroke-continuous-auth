@@ -26,7 +26,7 @@ The system captures only keystroke timing metadata: key-press and key-release ti
 - **Phase 2 — Feature Engineering**: ✅ Complete. Sliding-window pipeline (`02_feature_extraction.ipynb`) extracts 9 features per window: avg/std dwell, avg/std flight, typing speed, backspace rate, avg space dwell, overlap rate, long pause rate.
 - **Phase 3 — Model Training & Evaluation**: ✅ Complete. Isolation Forest trained on genuine baseline data (`03_model_training.ipynb`). FAR/FRR curves and EER analysis complete. **EER = 10.9%** at threshold `−0.0518`.
 - **Phase 4 — Decision Logic**: ✅ Complete. Majority-vote buffer (`04_decision_logic.ipynb`) smooths per-window scores into session-level alerts. See results below.
-- **Phase 5 — Real-Time Integration & Dynamic Ramp-Up**: 🔄 In Progress. Dynamic Ramp-Up consensus buffer (`05_real_time_simulation.ipynb`) cuts detection latency to ~70 keystrokes (~14 words) with 0.0% false alarms; streaming simulation verified.
+- **Phase 5 — Real-Time Integration & Dynamic Ramp-Up**: ✅ Complete. Dynamic Ramp-Up consensus buffer (`05_real_time_simulation.ipynb`) cuts detection latency to ~70 keystrokes (~14 words) with 0.0% false alarms; live background monitor service implemented (`src/05_real_time_monitor.py`).
 - **Phase 6 — Evaluation & Write-Up**: 🔲 Planned. Drift analysis across sessions/days; arXiv preprint or undergraduate symposium submission.
 
 ## Repository Structure
@@ -34,7 +34,8 @@ The system captures only keystroke timing metadata: key-press and key-release ti
 ```
 .
 ├── src/
-│   └── 01_keystroke_collector.py        # Phase 1: keystroke timing collector
+│   ├── 01_keystroke_collector.py        # Phase 1: keystroke timing collector
+│   └── 05_real_time_monitor.py          # Phase 5: live background continuous auth service
 ├── notebooks/
 │   ├── 02_feature_extraction.ipynb      # Phase 2: raw log → windowed feature vectors
 │   ├── 03_model_training.ipynb          # Phase 3: Isolation Forest training & EER evaluation
@@ -83,6 +84,16 @@ Run `notebooks/04_decision_logic.ipynb` to simulate the majority-vote buffer on 
 
 ### 5. Simulate real-time dynamic ramp-up & streaming
 Run `notebooks/05_real_time_simulation.ipynb` to evaluate the dynamic ramp-up consensus schedule ($3/3 \to 4/5 \to 8/10$) against the fixed 8-of-10 buffer, view the alert timeline plot, and simulate live keystroke streaming from raw logs.
+
+### 6. Run the live background monitor
+```
+python src/05_real_time_monitor.py
+```
+Type naturally across any application. The monitor continuously evaluates typing rhythm every 10 keystrokes. To enable workstation auto-lock on confirmed intruder alert:
+```
+python src/05_real_time_monitor.py --lock
+```
+Press ESC to terminate and view the session summary report.
 
 ## Results
 
