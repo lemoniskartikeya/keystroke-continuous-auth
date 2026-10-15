@@ -44,7 +44,8 @@ The system captures only keystroke timing metadata: key-press and key-release ti
 │   └── keystroke_log_genuine.csv        # Baseline keystroke data (authorized user)
 ├── results/
 │   ├── far_frr_curve.png                # FAR/FRR curve with EER marked
-│   └── ramp_up_latency_comparison.png   # Latency comparison: Fixed 8-of-10 vs Dynamic Ramp-Up
+│   ├── ramp_up_latency_comparison.png   # Latency comparison: Fixed 8-of-10 vs Dynamic Ramp-Up
+│   └── idle_takeover_comparison.png     # Latency comparison: With vs without idle-timeout reset
 ├── .gitignore
 └── README.md
 ```
@@ -150,6 +151,19 @@ While the Phase 4 fixed 8-of-10 buffer eliminated false alarms, requiring 8 cons
 | **Dynamic Ramp-Up Buffer** | **0.00%** (0 / 1,024) | **Window #2 (~70 keys / ~14 words)** | **826 / 1,011 (81.70%)** |
 
 **Impact**: Detection latency is reduced by **42% (50 fewer keystrokes)**, catching unauthorized actors significantly faster while maintaining zero false lockouts for genuine typing.
+
+#### Unattended Takeover Simulation (Idle-Timeout Watchdog)
+
+Replaying 200 genuine keys $\to$ 60-second idle pause $\to$ 250 impostor keys:
+
+![Idle Takeover Comparison](results/idle_takeover_comparison.png)
+
+| Condition | Buffer State at Takeover | Feature Integrity | Impostor Detection Latency | Alert Windows |
+|---|---|---|---|---|
+| **Without Idle Reset (Stale Buffer)** | Saturated with 10 genuine `False` flags | Blended (corrupted moments across 60s gap) | Keystroke #80 (~16 words) | 18 / 20 |
+| **With 30s Idle Watchdog Reset** | Clean FIFO reset (`len == 0`) | Isolated (pure 50-key impostor window) | **Keystroke #70 (~14 words)** | **19 / 20** |
+
+**Impact**: Automatically flushing the upstream keystroke window and downstream consensus queue upon a 30-second pause eliminates cross-user feature corruption and forces the intruder directly into the fast 70-keystroke dynamic ramp-up.
 
 ## Evaluation Methodology
 
