@@ -165,6 +165,16 @@ Replaying 200 genuine keys $\to$ 60-second idle pause $\to$ 250 impostor keys:
 
 **Impact**: Automatically flushing the upstream keystroke window and downstream consensus queue upon a 30-second pause eliminates cross-user feature corruption and forces the intruder directly into the fast 70-keystroke dynamic ramp-up.
 
+#### Unified Streaming Engine Verification (`ContinuousAuthDecisionEngine`)
+
+Replaying raw hardware event streams through the unified object-oriented decision engine in [`notebooks/05_real_time_simulation.ipynb`](notebooks/05_real_time_simulation.ipynb):
+
+| Test Scenario | Total Keystrokes | Window Evaluations | Alerts Triggered | First Alert Keystroke | Watchdog Resets |
+|---|---|---|---|---|---|
+| **Genuine Stream** | 500 | 46 | **0 (0.00% False Alert Rate)** | None (Zero Lockouts) | 0 |
+| **Impostor Stream** | 500 | 46 | **44 (95.65% Alert Rate)** | **Keystroke #70 (~14 words)** | 0 |
+| **Unattended Desk Takeover** | 450 (200 Gen + 250 Imp) | 39 | **19 Alert Windows** | **Keystroke #70 of Takeover** | **1 Reset (at 60s idle gap)** |
+
 ## Evaluation Methodology
 
 - **FAR (False Acceptance Rate)**: fraction of impostor windows scored below the anomaly threshold (wrongly accepted).
